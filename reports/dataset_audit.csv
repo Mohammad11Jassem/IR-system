@@ -1,0 +1,2 @@
+dataset_name,ir_datasets_id,documents_count_official,queries_count,qrels_count,has_docs,has_queries,has_qrels,document_schema,query_schema,qrels_schema,min_relevance,max_relevance,document_sample_status
+Medline TREC Genomics 2005,medline/2004/trec-genomics-2005,3672808,50,39958,True,True,True,"['doc_id', 'title', 'abstract']","['query_id', 'text']","['query_id', 'doc_id', 'relevance', 'iteration']",0,2,not_loaded_yet_due_to_large_download

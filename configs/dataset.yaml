@@ -1,0 +1,6 @@
+dataset:
+  name: main
+  ir_datasets_id: PUT_SELECTED_DATASET_ID_HERE
+  min_documents_required: 200000
+  mode: dev
+  dev_max_documents: 10000
