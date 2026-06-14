@@ -1,3 +1,4 @@
+import math
 class TfidfRetriever:
     def __init__(self, vectorizer):
         self.vectorizer = vectorizer
