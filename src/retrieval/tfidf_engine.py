@@ -1,3 +1,14 @@
+"""
+DEPRECATED / EDUCATIONAL ONLY.
+
+This is a manual in-memory TF-IDF implementation.
+It stores document vectors in memory and does not use the Terrier inverted index.
+
+Do not use this file in the official system pipeline.
+The official TF-IDF path is:
+Terrier index -> TerrierRetriever -> TfidfRetriever.
+"""
+
 import math
 from collections import Counter, defaultdict
 

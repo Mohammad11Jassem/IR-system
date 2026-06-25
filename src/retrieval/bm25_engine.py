@@ -1,3 +1,15 @@
+"""
+DEPRECATED / EDUCATIONAL ONLY.
+
+This is a manual in-memory BM25 implementation.
+It scans all documents and does not use the Terrier inverted index.
+
+Do not use this file in the official system pipeline.
+The official BM25 path is:
+Terrier index -> TerrierRetriever -> BM25Retriever.
+"""
+
+
 import math
 from collections import defaultdict, Counter
 

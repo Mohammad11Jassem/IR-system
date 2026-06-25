@@ -1,6 +1,6 @@
 dataset:
   name: main
-  ir_datasets_id: PUT_SELECTED_DATASET_ID_HERE
+  ir_datasets_id: medline/2004/trec-genomics-2005
   min_documents_required: 200000
   mode: dev
   dev_max_documents: 10000

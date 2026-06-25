@@ -1,0 +1,2 @@
+model,run_depth,precision_k,recall_k,ndcg_k,map_depth,map,precision_at_10,recall_at_100,ndcg_at_10,num_queries,failed_queries,avg_query_time_seconds,total_query_time_seconds,wall_time_seconds,run_file,per_query_file
+serial_bm25_word2vec,100,10,100,10,100,0.07705265332439835,0.24285714285714285,0.2404875940475621,0.1883872759227363,49,0,0.23001285552978515,11.500642776489258,11.61621618270874,reports\evaluation\runs\serial_bm25_word2vec.jsonl,reports\evaluation\per_query\serial_bm25_word2vec_per_query.csv

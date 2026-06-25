@@ -1,0 +1,2 @@
+model,run_depth,precision_k,recall_k,ndcg_k,map_depth,map,precision_at_10,recall_at_1000,ndcg_at_10,num_queries,failed_queries,avg_query_time_seconds,total_query_time_seconds,wall_time_seconds,run_file,per_query_file
+bm25,1000,10,1000,10,1000,0.1846167455589156,0.4163265306122449,0.5086542163826847,0.37716043904655877,49,0,0.6441196823120117,32.205984115600586,70.62047243118286,reports\evaluation\bm25_prf_depth1000\runs\bm25.jsonl,reports\evaluation\bm25_prf_depth1000\per_query\bm25_per_query.csv

@@ -1,0 +1,2 @@
+model,run_depth,precision_k,recall_k,ndcg_k,map_depth,map,precision_at_10,recall_at_20,ndcg_at_10,num_queries,failed_queries,avg_query_time_seconds,total_query_time_seconds,wall_time_seconds,run_file,per_query_file
+bm25,20,10,20,10,20,0.04160487597987598,0.25,0.0972972972972973,0.11826986354666183,2,0,0.21761417388916016,0.4352283477783203,1.512742042541504,reports\evaluation\prf_smoke_test\runs\bm25.jsonl,reports\evaluation\prf_smoke_test\per_query\bm25_per_query.csv

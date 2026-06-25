@@ -1,9 +1,37 @@
+# Python
 .venv/
+venv/
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+
+# Jupyter
 .ipynb_checkpoints/
-data/raw/
-data/processed/
-data/artifacts/
-indices/
+
+# Environment
 .env
+
+# Large IR artifacts
+artifacts/
+ir_project_artifacts/
+documents.sqlite
+*.sqlite
+*.db
+
+# Indexes
+indexes/
+*.faiss
+*.index
+*.pkl
+*.jsonl
+
+# Large evaluation outputs
+reports/evaluation/**/runs/
+reports/evaluation/**/per_query/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
