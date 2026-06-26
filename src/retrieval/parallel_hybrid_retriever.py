@@ -46,6 +46,8 @@ class ParallelHybridRetriever:
         per_model_k: int = 100,
         top_k: int = 10,
         rrf_k: int = 60,
+        bm25_k1: float = 1.2,
+        bm25_b: float = 0.75,
     ):
         self.models = self._normalize_models(models)
         self.index_path = index_path
@@ -58,6 +60,8 @@ class ParallelHybridRetriever:
         self.per_model_k = per_model_k
         self.top_k = top_k
         self.rrf_k = rrf_k
+        self.bm25_k1 = float(bm25_k1)
+        self.bm25_b = float(bm25_b)
 
         if len(self.models) < 2:
             raise ValueError("Parallel Hybrid requires at least two different models.")
@@ -105,6 +109,8 @@ class ParallelHybridRetriever:
                     index_path=self.index_path,
                     db_path=self.db_path,
                     top_k=self.per_model_k,
+                    bm25_k1=self.bm25_k1,
+                    bm25_b=self.bm25_b,
                 )
 
             elif model == "tfidf":
@@ -224,6 +230,10 @@ class ParallelHybridRetriever:
             "per_model_k": self.per_model_k,
             "top_k": self.top_k,
             "rrf_k": self.rrf_k,
+            "bm25_parameters": {
+                "k1": self.bm25_k1,
+                "b": self.bm25_b,
+            } if "bm25" in self.models else None,
             "time_seconds": time.time() - start,
             "results": final_results,
             "model_outputs_summary": {

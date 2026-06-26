@@ -608,6 +608,8 @@ def build_retriever(model_name: str, args):
             index_path=args.index_path,
             db_path=args.db_path,
             top_k=args.run_depth,
+            bm25_k1=args.bm25_k1,
+            bm25_b=args.bm25_b,
         )
 
     if model_name in {"tfidf", "tf-idf", "tf_idf"}:
@@ -644,6 +646,8 @@ def build_retriever(model_name: str, args):
             per_model_k=args.per_model_k,
             top_k=args.run_depth,
             rrf_k=args.rrf_k,
+            bm25_k1=args.bm25_k1,
+            bm25_b=args.bm25_b,
         )
 
     if model_name == "parallel_full":
@@ -658,6 +662,8 @@ def build_retriever(model_name: str, args):
             per_model_k=args.per_model_k,
             top_k=args.run_depth,
             rrf_k=args.rrf_k,
+            bm25_k1=args.bm25_k1,
+            bm25_b=args.bm25_b,
         )
 
     if model_name == "serial_bm25_bert":
@@ -670,6 +676,8 @@ def build_retriever(model_name: str, args):
             bert_model_name=args.bert_model_name,
             candidate_k=args.candidate_k,
             top_k=args.run_depth,
+            bm25_k1=args.bm25_k1,
+            bm25_b=args.bm25_b,
         )
 
     if model_name == "serial_tfidf_bert":
@@ -682,6 +690,8 @@ def build_retriever(model_name: str, args):
             bert_model_name=args.bert_model_name,
             candidate_k=args.candidate_k,
             top_k=args.run_depth,
+            bm25_k1=args.bm25_k1,
+            bm25_b=args.bm25_b,
         )
 
     if model_name == "serial_bm25_word2vec":
@@ -694,6 +704,8 @@ def build_retriever(model_name: str, args):
             bert_model_name=args.bert_model_name,
             candidate_k=args.candidate_k,
             top_k=args.run_depth,
+            bm25_k1=args.bm25_k1,
+            bm25_b=args.bm25_b,
         )
 
     raise ValueError(
@@ -717,6 +729,8 @@ def parse_args():
 
     parser.add_argument("--dataset", default="main")
     parser.add_argument("--run-depth", type=int, default=100)
+    parser.add_argument("--bm25-k1", type=float, default=1.2)
+    parser.add_argument("--bm25-b", type=float, default=0.75)
     parser.add_argument("--precision-k", type=int, default=10)
     parser.add_argument("--ndcg-k", type=int, default=10)
     parser.add_argument(

@@ -45,6 +45,8 @@ class SerialHybridRetriever:
         bert_model_name: str = "sentence-transformers/all-MiniLM-L6-v2",
         candidate_k: int = 100,
         top_k: int = 10,
+        bm25_k1: float = 1.2,
+        bm25_b: float = 0.75,
     ):
         self.first_stage = first_stage.lower().strip()
         self.second_stage = second_stage.lower().strip()
@@ -56,6 +58,8 @@ class SerialHybridRetriever:
 
         self.candidate_k = candidate_k
         self.top_k = top_k
+        self.bm25_k1 = float(bm25_k1)
+        self.bm25_b = float(bm25_b)
 
         if self.first_stage not in {"bm25", "tfidf", "word2vec"}:
             raise ValueError(
@@ -101,6 +105,8 @@ class SerialHybridRetriever:
                 index_path=self.index_path,
                 db_path=self.db_path,
                 top_k=self.candidate_k,
+                bm25_k1=self.bm25_k1,
+                bm25_b=self.bm25_b,
             )
 
         if self.first_stage == "tfidf":
@@ -283,6 +289,10 @@ class SerialHybridRetriever:
                 "second_stage": self.second_stage,
                 "candidate_k": self.candidate_k,
                 "top_k": self.top_k,
+                "bm25_parameters": {
+                    "k1": self.bm25_k1,
+                    "b": self.bm25_b,
+                } if self.first_stage == "bm25" else None,
                 "time_seconds": time.time() - start,
                 "results": [],
             }
@@ -320,6 +330,10 @@ class SerialHybridRetriever:
             "second_stage": self.second_stage,
             "candidate_k": self.candidate_k,
             "top_k": self.top_k,
+            "bm25_parameters": {
+                "k1": self.bm25_k1,
+                "b": self.bm25_b,
+            } if self.first_stage == "bm25" else None,
             "time_seconds": time.time() - start,
             "results": final_results,
         }

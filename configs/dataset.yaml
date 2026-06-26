@@ -1,6 +1,16 @@
+# dataset:
+#   name: main
+#   ir_datasets_id: medline/2004/trec-genomics-2005
+#   min_documents_required: 200000
+#   mode: dev
+#   dev_max_documents: 10000
+
 dataset:
   name: main
   ir_datasets_id: medline/2004/trec-genomics-2005
   min_documents_required: 200000
-  mode: dev
-  dev_max_documents: 10000
+  mode: full
+  dev_max_documents: null
+  documents_count: 3672808
+  queries_count: 50
+  qrels_count: 39958
