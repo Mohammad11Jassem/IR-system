@@ -1,2 +1,0 @@
-model,run_depth,precision_k,recall_k,ndcg_k,map_depth,map,precision_at_10,recall_at_1000,ndcg_at_10,num_queries,failed_queries,avg_query_time_seconds,total_query_time_seconds,wall_time_seconds,run_file,per_query_file
-bm25,1000,10,1000,10,1000,0.1819813286659061,0.39183673469387753,0.5058417947633438,0.3642111394478225,49,0,0.5914354705810547,29.571773529052734,71.31793904304504,reports\evaluation\bm25_prf_word2vec_depth1000\runs\bm25.jsonl,reports\evaluation\bm25_prf_word2vec_depth1000\per_query\bm25_per_query.csv

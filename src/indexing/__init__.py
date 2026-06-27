@@ -1,0 +1,3 @@
+from src.indexing.terrier_index import build_terrier_index
+from src.indexing.bert_index import build_bert_faiss_index
+from src.indexing.word2vec_index import build_word2vec_faiss_index

@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from src.preprocessing import QueryProcessor
+from src.preprocessing import DocumentProcessor
 from src.query_refinement.history_refiner import SemanticHistoryRefiner
 from src.query_refinement.models import QueryRefinementConfig, QueryRefinementResult
 from src.query_refinement.prf_refiner import PRFRefiner
@@ -41,7 +42,8 @@ class QueryRefinementService:
         sentence_model_name: str = "sentence-transformers/all-MiniLM-L6-v2",
     ):
         self.config = config or QueryRefinementConfig()
-        self.query_processor = QueryProcessor()
+        # self.query_processor = QueryProcessor()
+        self.document_processor = DocumentProcessor()
         self.history_queries = history_queries or SemanticHistoryRefiner.load_history_file(history_file)
 
         self.history_refiner: SemanticHistoryRefiner | None = None
@@ -74,8 +76,10 @@ class QueryRefinementService:
         feedback_documents: list[dict[str, Any]] | None = None,
     ) -> QueryRefinementResult:
         original_query = "" if query is None else str(query)
-        processed_query = self.query_processor.process(original_query)
-        original_terms = tokenize_terms(processed_query)
+        # processed_query = self.query_processor.process(original_query)
+        # original_terms = tokenize_terms(processed_query)
+        processed_query = self.document_processor.process_to_text(original_query)
+        original_terms = self.document_processor.process(original_query)
 
         # Preserve the user's original intent by repeating original terms.
         final_terms: list[str] = []

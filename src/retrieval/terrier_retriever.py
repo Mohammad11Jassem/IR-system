@@ -9,6 +9,8 @@ from src.indexing.terrier_index import init_pyterrier
 from src.preprocessing import QueryProcessor
 from src.storage.document_store import DocumentStore
 
+from src.preprocessing import DocumentProcessor
+
 
 ModelName = Literal["bm25", "tfidf", "tf-idf"]
 
@@ -66,7 +68,8 @@ class TerrierRetriever:
         self.bm25_k1 = float(bm25_k1)
         self.bm25_b = float(bm25_b)
 
-        self.query_processor = QueryProcessor()
+        # self.query_processor = QueryProcessor()
+        self.document_processor = DocumentProcessor()
         self.store = DocumentStore(db_path)
 
         retriever_kwargs = {
@@ -99,7 +102,8 @@ class TerrierRetriever:
         start = time.time()
 
         original_query = query
-        processed_query = self.query_processor.process(query)
+        # processed_query = self.query_processor.process(query)
+        processed_query = self.document_processor.process_to_text(query)
 
         if not processed_query:
             return {

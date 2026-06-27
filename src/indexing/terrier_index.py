@@ -5,12 +5,7 @@ from typing import Dict, Iterator, Optional
 
 import pyterrier as pt
 
-
-# def init_pyterrier() -> None:
-#     """
-#     Initialize PyTerrier / Terrier Java engine.
-#     """
-#     pt.java.init()
+from src.preprocessing import DocumentProcessor
 
 
 _PYTERRIER_INITIALIZED = False
@@ -19,18 +14,13 @@ _PYTERRIER_INITIALIZED = False
 def init_pyterrier() -> None:
     """
     Initialize PyTerrier/Java only once per Python process.
-
-    This is required because multiple retrievers such as BM25 and TF-IDF
-    may be constructed in the same process, especially in Parallel Hybrid.
     """
-
     global _PYTERRIER_INITIALIZED
 
     if _PYTERRIER_INITIALIZED:
         return
 
     try:
-        # Some PyTerrier versions expose this check.
         if hasattr(pt, "java") and hasattr(pt.java, "started"):
             if pt.java.started():
                 _PYTERRIER_INITIALIZED = True
@@ -42,8 +32,6 @@ def init_pyterrier() -> None:
     except ValueError as exc:
         message = str(exc)
 
-        # PyTerrier raises this when Java init has already been called.
-        # In our case this is safe to ignore because Java is already available.
         if "already been run" in message:
             _PYTERRIER_INITIALIZED = True
             return
@@ -58,10 +46,17 @@ def iter_documents_from_sqlite(
     """
     Stream documents from documents.sqlite to PyTerrier.
 
+    IMPORTANT:
+    The same DocumentProcessor used here is also used in TerrierRetriever
+    for BM25/TF-IDF queries. This keeps document indexing and query
+    processing consistent for traditional IR models.
+
     Terrier expects:
     - docno: external document id
-    - text: document text to index
+    - text: processed document text to index
     """
+    processor = DocumentProcessor()
+
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
 
@@ -81,15 +76,22 @@ def iter_documents_from_sqlite(
         )
 
     yielded = 0
-    skipped_empty = 0
+    skipped_empty_raw = 0
+    skipped_empty_after_processing = 0
     start = time.time()
 
     for row in cursor:
         doc_id = str(row["doc_id"])
-        text = row["contents"] or ""
+        raw_text = row["contents"] or ""
 
-        if not text.strip():
-            skipped_empty += 1
+        if not raw_text.strip():
+            skipped_empty_raw += 1
+            continue
+
+        processed_text = processor.process_to_text(raw_text)
+
+        if not processed_text.strip():
+            skipped_empty_after_processing += 1
             continue
 
         yielded += 1
@@ -97,21 +99,24 @@ def iter_documents_from_sqlite(
         if yielded % 100000 == 0:
             elapsed = time.time() - start
             print(
-                f"Yielded {yielded:,} documents | "
-                f"Skipped empty: {skipped_empty:,} | "
+                f"Yielded {yielded:,} processed documents | "
+                f"Skipped raw empty: {skipped_empty_raw:,} | "
+                f"Skipped after preprocessing: {skipped_empty_after_processing:,} | "
                 f"elapsed: {elapsed / 60:.2f} min"
             )
 
         yield {
             "docno": doc_id,
-            "text": text,
+            "text": processed_text,
         }
 
     conn.close()
 
     print(
-        f"Finished streaming documents. "
-        f"Yielded: {yielded:,}, skipped empty: {skipped_empty:,}"
+        "Finished streaming processed documents. "
+        f"Yielded: {yielded:,}, "
+        f"skipped raw empty: {skipped_empty_raw:,}, "
+        f"skipped after preprocessing: {skipped_empty_after_processing:,}"
     )
 
 
@@ -123,7 +128,9 @@ def build_terrier_index(
 ) -> str:
     """
     Build a Terrier inverted index from documents.sqlite.
-    This index will later be used for BM25 and TF-IDF retrieval.
+
+    Documents are processed with DocumentProcessor before being sent to
+    Terrier. TerrierRetriever uses the same DocumentProcessor for queries.
     """
     init_pyterrier()
 
@@ -137,10 +144,11 @@ def build_terrier_index(
     print("=" * 80)
     print("BUILD TERRIER INDEX")
     print("=" * 80)
-    print(f"SQLite DB : {db_file}")
-    print(f"Index path: {index_dir}")
-    print(f"Overwrite : {overwrite}")
-    print(f"Limit     : {limit if limit is not None else 'FULL DATASET'}")
+    print(f"SQLite DB       : {db_file}")
+    print(f"Index path      : {index_dir}")
+    print(f"Overwrite       : {overwrite}")
+    print(f"Limit           : {limit if limit is not None else 'FULL DATASET'}")
+    print("Preprocessing   : DocumentProcessor -> process_to_text")
     print("=" * 80)
 
     indexer = pt.terrier.IterDictIndexer(

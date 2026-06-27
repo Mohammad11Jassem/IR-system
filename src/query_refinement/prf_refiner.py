@@ -13,6 +13,8 @@ from src.query_refinement.token_utils import (
 )
 
 
+from src.preprocessing import DocumentProcessor
+
 class PRFRefiner:
     """
     Pseudo Relevance Feedback query expansion.
@@ -24,6 +26,7 @@ class PRFRefiner:
 
     def __init__(self, config: QueryRefinementConfig | None = None):
         self.config = config or QueryRefinementConfig()
+        self.document_processor = DocumentProcessor()
 
     def extract_terms(
         self,
@@ -51,7 +54,8 @@ class PRFRefiner:
 
         for rank, doc in enumerate(feedback_documents, start=1):
             text = document_to_text(doc)
-            tokens = tokenize_terms(text)
+            # tokens = tokenize_terms(text)
+            tokens = self.document_processor.process(text)
             if not tokens:
                 continue
 

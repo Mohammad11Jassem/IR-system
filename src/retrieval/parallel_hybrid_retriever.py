@@ -1,10 +1,13 @@
 import time
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Literal
 
 from src.retrieval.bm25_retriever import BM25Retriever
 from src.retrieval.tfidf_retriever import TfidfRetriever
 from src.retrieval.word2vec_retriever import Word2VecRetriever
 from src.retrieval.bert_retriever import BertRetriever
+
 
 
 RetrievalModel = Literal["bm25", "tfidf", "word2vec", "bert"]
@@ -73,6 +76,7 @@ class ParallelHybridRetriever:
             )
 
         self.retrievers = self._build_retrievers()
+        self._terrier_lock = threading.Lock()
 
     def _normalize_models(
         self,
@@ -145,7 +149,7 @@ class ParallelHybridRetriever:
         rank: int,
     ) -> float:
         return 1.0 / (self.rrf_k + rank)
-
+    
     def _fuse_with_rrf(
         self,
         model_outputs: dict,
@@ -155,9 +159,9 @@ class ParallelHybridRetriever:
         for model_name, output in model_outputs.items():
             results = output.get("results", [])
 
-            for item in results:
+            for fallback_rank, item in enumerate(results, start=1):
                 doc_id = str(item.get("doc_id"))
-                rank = int(item.get("rank"))
+                rank = int(item.get("rank", fallback_rank))
                 original_score = float(item.get("score", 0.0))
 
                 contribution = self._rrf_score(rank)
@@ -171,7 +175,6 @@ class ParallelHybridRetriever:
                         "model_contributions": {},
                     }
 
-                # If title/abstract were missing from a previous model but available now
                 if not fused_docs[doc_id].get("title") and item.get("title"):
                     fused_docs[doc_id]["title"] = item.get("title")
 
@@ -187,9 +190,12 @@ class ParallelHybridRetriever:
                 }
 
         fused_results = list(fused_docs.values())
-        fused_results.sort(key=lambda item: item["score"], reverse=True)
+        fused_results.sort(
+            key=lambda item: (-item["score"], item["doc_id"])
+        )
 
         return fused_results
+
 
     def search(
         self,
@@ -199,13 +205,28 @@ class ParallelHybridRetriever:
 
         model_outputs = {}
 
-        for model_name, retriever in self.retrievers.items():
-            model_outputs[model_name] = retriever.search(query)
+        # Execute all retrievers in parallel
+        with ThreadPoolExecutor(max_workers=len(self.retrievers)) as executor:
+
+            # futures = {
+            #     executor.submit(retriever.search, query): model_name
+            #     for model_name, retriever in self.retrievers.items()
+            # }
+            futures = {
+                executor.submit(self._search_one_model, model_name, retriever, query): model_name
+                for model_name, retriever in self.retrievers.items()
+            }
+
+            for future in as_completed(futures):
+                model_name = futures[future]
+                model_outputs[model_name] = future.result()
 
         if self.fusion_method == "rrf":
             fused_results = self._fuse_with_rrf(model_outputs)
         else:
-            raise ValueError(f"Unsupported fusion_method: {self.fusion_method}")
+            raise ValueError(
+                f"Unsupported fusion_method: {self.fusion_method}"
+            )
 
         final_results = []
 
@@ -230,10 +251,14 @@ class ParallelHybridRetriever:
             "per_model_k": self.per_model_k,
             "top_k": self.top_k,
             "rrf_k": self.rrf_k,
-            "bm25_parameters": {
-                "k1": self.bm25_k1,
-                "b": self.bm25_b,
-            } if "bm25" in self.models else None,
+            "bm25_parameters": (
+                {
+                    "k1": self.bm25_k1,
+                    "b": self.bm25_b,
+                }
+                if "bm25" in self.models
+                else None
+            ),
             "time_seconds": time.time() - start,
             "results": final_results,
             "model_outputs_summary": {
@@ -245,3 +270,130 @@ class ParallelHybridRetriever:
                 for model_name, output in model_outputs.items()
             },
         }
+
+
+
+    def _search_one_model(
+        self,
+        model_name: str,
+        retriever,
+        query: str,
+    ) -> dict:
+        """
+        Runs one retriever.
+
+        PyTerrier/Terrier uses the JVM and is not always safe when BM25 and TF-IDF
+        are executed concurrently in different Python threads. Therefore, Terrier
+        based models are protected with a lock, while vector models can run freely.
+        """
+        if model_name in {"bm25", "tfidf"}:
+            with self._terrier_lock:
+                return retriever.search(query)
+
+        return retriever.search(query)
+
+    # def _fuse_with_rrf(
+    #     self,
+    #     model_outputs: dict,
+    # ) -> list[dict]:
+    #     fused_docs = {}
+
+    #     for model_name, output in model_outputs.items():
+    #         results = output.get("results", [])
+
+    #         for item in results:
+    #             doc_id = str(item.get("doc_id"))
+    #             rank = int(item.get("rank"))
+    #             original_score = float(item.get("score", 0.0))
+
+    #             contribution = self._rrf_score(rank)
+
+    #             if doc_id not in fused_docs:
+    #                 fused_docs[doc_id] = {
+    #                     "doc_id": doc_id,
+    #                     "title": item.get("title"),
+    #                     "abstract": item.get("abstract"),
+    #                     "score": 0.0,
+    #                     "model_contributions": {},
+    #                 }
+
+    #             # If title/abstract were missing from a previous model but available now
+    #             if not fused_docs[doc_id].get("title") and item.get("title"):
+    #                 fused_docs[doc_id]["title"] = item.get("title")
+
+    #             if not fused_docs[doc_id].get("abstract") and item.get("abstract"):
+    #                 fused_docs[doc_id]["abstract"] = item.get("abstract")
+
+    #             fused_docs[doc_id]["score"] += contribution
+
+    #             fused_docs[doc_id]["model_contributions"][model_name] = {
+    #                 "rank": rank,
+    #                 "score": original_score,
+    #                 "rrf_contribution": contribution,
+    #             }
+
+    #     fused_results = list(fused_docs.values())
+    #     fused_results.sort(key=lambda item: item["score"], reverse=True)
+
+    #     return fused_results
+    
+
+
+
+
+
+
+    # def search(
+    #     self,
+    #     query: str,
+    # ) -> dict:
+    #     start = time.time()
+
+    #     model_outputs = {}
+
+    #     for model_name, retriever in self.retrievers.items():
+    #         model_outputs[model_name] = retriever.search(query)
+
+    #     if self.fusion_method == "rrf":
+    #         fused_results = self._fuse_with_rrf(model_outputs)
+    #     else:
+    #         raise ValueError(f"Unsupported fusion_method: {self.fusion_method}")
+
+    #     final_results = []
+
+    #     for rank, item in enumerate(fused_results[: self.top_k], start=1):
+    #         final_results.append(
+    #             {
+    #                 "rank": rank,
+    #                 "doc_id": item["doc_id"],
+    #                 "score": float(item["score"]),
+    #                 "fusion_method": self.fusion_method,
+    #                 "title": item.get("title"),
+    #                 "abstract": item.get("abstract"),
+    #                 "model_contributions": item.get("model_contributions", {}),
+    #             }
+    #         )
+
+    #     return {
+    #         "query": query,
+    #         "model": "PARALLEL_HYBRID",
+    #         "models": self.models,
+    #         "fusion_method": self.fusion_method,
+    #         "per_model_k": self.per_model_k,
+    #         "top_k": self.top_k,
+    #         "rrf_k": self.rrf_k,
+    #         "bm25_parameters": {
+    #             "k1": self.bm25_k1,
+    #             "b": self.bm25_b,
+    #         } if "bm25" in self.models else None,
+    #         "time_seconds": time.time() - start,
+    #         "results": final_results,
+    #         "model_outputs_summary": {
+    #             model_name: {
+    #                 "returned_results": len(output.get("results", [])),
+    #                 "model": output.get("model"),
+    #                 "time_seconds": output.get("time_seconds"),
+    #             }
+    #             for model_name, output in model_outputs.items()
+    #         },
+    #     }

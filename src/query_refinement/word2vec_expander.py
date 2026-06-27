@@ -13,6 +13,8 @@ from src.query_refinement.token_utils import (
     tokenize_terms,
 )
 
+from src.preprocessing import DocumentProcessor
+
 
 class Word2VecQueryExpander:
     """
@@ -32,6 +34,7 @@ class Word2VecQueryExpander:
         self.index_dir = Path(word2vec_index_dir)
         self.model_path = self.index_dir / "word2vec.model"
         self.config = config or QueryRefinementConfig()
+        self.document_processor = DocumentProcessor()
 
         if not self.model_path.exists():
             raise FileNotFoundError(f"Word2Vec model not found: {self.model_path}")
@@ -47,7 +50,8 @@ class Word2VecQueryExpander:
         df: Counter[str] = Counter()
 
         for doc in feedback_documents:
-            tokens = set(tokenize_terms(document_to_text(doc)))
+            # tokens = set(tokenize_terms(document_to_text(doc)))
+            tokens = set(self.document_processor.process(document_to_text(doc)))
             for token in tokens:
                 if not is_meaningful_token(
                     token=token,

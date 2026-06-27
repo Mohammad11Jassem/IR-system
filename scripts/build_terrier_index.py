@@ -1,54 +1,3 @@
-# import argparse
-# import sys
-# from pathlib import Path
-
-# PROJECT_ROOT = Path(__file__).resolve().parents[1]
-# sys.path.insert(0, str(PROJECT_ROOT))
-
-# from src.indexing.terrier_index import build_terrier_index
-
-
-# def main():
-#     parser = argparse.ArgumentParser()
-
-#     parser.add_argument(
-#         "--db-path",
-#         required=True,
-#         help="Path to documents.sqlite",
-#     )
-
-#     parser.add_argument(
-#         "--index-path",
-#         required=True,
-#         help="Output Terrier index directory",
-#     )
-
-#     parser.add_argument(
-#         "--overwrite",
-#         action="store_true",
-#         help="Overwrite existing Terrier index",
-#     )
-
-#     parser.add_argument(
-#         "--limit",
-#         type=int,
-#         default=None,
-#         help="Optional document limit for testing",
-#     )
-
-#     args = parser.parse_args()
-
-#     build_terrier_index(
-#         db_path=args.db_path,
-#         index_path=args.index_path,
-#         overwrite=args.overwrite,
-#         limit=args.limit,
-#     )
-
-
-# if __name__ == "__main__":
-#     main()
-
 import argparse
 import sys
 from pathlib import Path
@@ -58,7 +7,6 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.indexing.terrier_index import build_terrier_index
 
-from src.preprocessing import QueryProcessor
 
 FULL_INDEX_NAMES = {
     "terrier_medline",

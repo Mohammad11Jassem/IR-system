@@ -9,7 +9,7 @@ from sentence_transformers import SentenceTransformer
 
 from src.query_refinement.models import QueryRefinementConfig
 from src.query_refinement.token_utils import is_meaningful_token, tokenize_terms, unique_preserve_order
-
+from src.preprocessing import DocumentProcessor
 
 class SemanticHistoryRefiner:
     """
@@ -28,6 +28,7 @@ class SemanticHistoryRefiner:
         self.model_name = model_name
         self.config = config or QueryRefinementConfig()
         self.model = SentenceTransformer(model_name)
+        self.document_processor = DocumentProcessor()
 
     @staticmethod
     def load_history_file(path: str | Path | None) -> list[str]:
@@ -98,7 +99,8 @@ class SemanticHistoryRefiner:
         candidate_terms: list[str] = []
 
         for item in selected_history:
-            for token in tokenize_terms(item["query"]):
+            # for token in tokenize_terms(item["query"]):
+            for token in self.document_processor.process(item["query"]):
                 if token in existing:
                     continue
                 if not is_meaningful_token(

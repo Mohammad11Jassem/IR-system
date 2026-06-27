@@ -45,6 +45,15 @@ DEFAULT_STOP_TERMS = {
 }
 
 
+GENERIC_PRF_STOPWORDS = {
+    "one", "two", "three", "four", "five",
+    "first", "second", "third",
+    "study", "studies", "result", "results",
+    "method", "methods", "analysis", "data",
+    "patient", "patients", "case", "cases",
+    "using", "used", "show", "shown",
+}
+
 def tokenize_terms(text: str) -> list[str]:
     if not text:
         return []
@@ -65,33 +74,6 @@ def unique_preserve_order(items: Iterable[str]) -> list[str]:
 
 def is_gene_like(token: str) -> bool:
     return bool(GENE_LIKE_PATTERN.match(str(token).strip()))
-
-
-# def is_meaningful_token(
-#     token: str,
-#     stop_terms: set[str],
-#     min_token_length: int = 2,
-#     allow_numeric_tokens: bool = False,
-# ) -> bool:
-#     token = str(token).strip().lower()
-#     if not token:
-#         return False
-
-#     if token in stop_terms:
-#         return False
-
-#     if token.isdigit() and not allow_numeric_tokens:
-#         return False
-
-#     # Keep short biomedical symbols such as p53 and IL-2.
-#     if len(token) < min_token_length and not is_gene_like(token):
-#         return False
-
-#     # Avoid punctuation-only / malformed expansion terms.
-#     if not re.search(r"[a-zA-Z]", token) and not allow_numeric_tokens:
-#         return False
-
-#     return True
 
 
 def is_meaningful_token(
@@ -116,6 +98,9 @@ def is_meaningful_token(
         return False
 
     if not allow_numeric_tokens and token.isnumeric():
+        return False
+    
+    if token in GENERIC_PRF_STOPWORDS:
         return False
 
     return True
